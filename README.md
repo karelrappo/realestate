@@ -5,7 +5,7 @@ Currently includes a scraper for real estate site https://www.city24.ee. kv.ee t
 ## What does it do, and how to use?
 There are currently two versions of the scrapers -
 - [one](https://github.com/karelrappo/realestate/blob/main/City24ScraperMin.py) that scrapes the high level data from search results
-- [second](https://github.com/karelrappo/realestate/blob/main/Scraper_City24.py) that gets detailed data from each page of the property
+- [second](https://github.com/karelrappo/realestate/blob/main/City24Scraper.py) that gets detailed data from each page of the property
 
 1. Run either script, and fill in the inputs prompted in the command line.
 Inputs:
