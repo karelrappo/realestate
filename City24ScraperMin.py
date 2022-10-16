@@ -39,35 +39,6 @@ class WebPage:
     def quit(self):
         self.driver.quit()
 
-## Function for extracting the info from properties
-def get_info(url):
-    """Opens up the property, and stores the info"""
-    d = {}
-    soup = browser.parser(url)
-    try:
-        address = soup.find("div", {"class": "obj-detail__address"}).get_text()
-    except Exception:
-        address = "N/A"
-    try:
-        linnaosa = soup.find("div", {"class": "obj-detail__area"}).get_text()
-    except Exception:
-        linnaosa = "N/A"
-    # Find all tables on the pages
-    tables = soup.find_all("table",{"class":"full-specs"})
-    # Extract the body of the tables and append to the list
-    table_contents = []
-    for table in tables:
-        table_contents.append(table.find_all("tbody"))
-    # Loop through table contents and extract all rows
-    for table_content in table_contents:
-        for items in table_content[0].find_all("tr"):
-        # Create a cleaned list with items and values
-            data = [item.get_text(separator=',') for item in items.find_all(['th', 'td'])]
-            d[data[0]] = data[-1]
-            d['Aadress'] = address + ',' + linnaosa
-            d['Kuupaev'] = today
-    return(d)
-
 def get_pages(url):
     """Checks how many pages are for a given search"""
     soup = browser.parser(url)
@@ -76,16 +47,40 @@ def get_pages(url):
     return count
 
 def get_properties(url, count):
-    """Loops through all pages of listings, and saves their urls into list."""
-    all_links = []
+    """Loops through all pages of listings, and saves data of properties into list."""
+    dataset = []
     for i in tqdm(range(1, count+1)):
         page_url = url+str(i)
         soup = browser.parser(page_url)
-        results = soup.find_all("article", {"class": "object-wrapper"})
-        for property in results:
-            link = property.find_all("a", class_="object__attributes")[0]['href']
-            all_links.append("https://city24.ee" + link)
-    return all_links
+        listings = soup.find_all("article", {"class": "object-wrapper"})
+        for property in listings:
+            d={}
+            rooms = ""
+            floors = ""
+            area_outside = ""
+            area = ""
+            link = ""
+            address = ""
+            for attributes in property.find_all("a", class_="object__attributes"):
+                link = "https://city24.ee" + attributes['href']
+                address = attributes['title']
+                for item in attributes.find_all('li'):
+                    if item.find("span",{"class":"icon-door"}) is not None:
+                        rooms = item.get_text().strip()
+                    elif item.find("span",{"class":"icon-stairs"}) is not None:
+                        floors = item.get_text().strip()
+                    elif item.find("span",{"class":"icon-land"}) is not None:
+                        area_outside = item.get_text().strip()
+                    else:
+                        area = item.get_text().strip()
+            d['rooms']=rooms
+            d['floors']=floors
+            d['area_outside']=area_outside
+            d['area']=area
+            d['link']=link
+            d['address']=address
+            dataset.append(d)
+    return(dataset)
 
 def user_inputs():
     """Get the inputs from the user for search"""
@@ -117,23 +112,14 @@ def user_inputs():
 
 def main():
     """Main function that runs everything"""
-    dataset = []
     url, BUILDING_TYPE, LISTING_TYPE, COUNTY = user_inputs()
     count = get_pages(url)
-    print(f"Started scraping links at {datetime.now().time()}")
-    links = get_properties(url, count)
-    print(f"Stopped scraping links at {datetime.now().time()}")
-
-    savedir = f"./data/{today}/{BUILDING_TYPE}/{LISTING_TYPE}/{COUNTY}"
+    savedir = f"./data/MinimalVersion/{today}/{BUILDING_TYPE}/{LISTING_TYPE}/{COUNTY}"
     os.makedirs(savedir, exist_ok=True)
-    pd.DataFrame(links).to_csv(f"{savedir}/links.csv")
-
     print(f"Started scraping data at {datetime.now().time()}")
-    for i in tqdm(range(0,len(links))):
-        dataset.append(get_info(links[i]))
+    dataset = get_properties(url, count)
     df = pd.DataFrame(dataset)
     df['maakond'] = COUNTY
-
     df.to_csv(f"{savedir}/properties.csv")
     browser.quit()
 
