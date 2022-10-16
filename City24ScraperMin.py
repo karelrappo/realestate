@@ -1,26 +1,27 @@
-# Import packages
 import time
 import warnings
-warnings.filterwarnings("ignore", category=DeprecationWarning)
 from selenium import webdriver
 from bs4 import BeautifulSoup
 from tqdm.auto import tqdm
 import pandas as pd
 from datetime import datetime
 import os
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 # Create the options - i.e. enable javascript and disable automation flag
 options = webdriver.ChromeOptions()
-options.add_argument("--enable-javascript");
-options.add_argument("--dns-prefetch-disable");
-options.add_argument("--disable-gpu");
-options.add_argument("--disable-blink-features=AutomationControlled");
-options.add_argument("--start-fullscreen");
+options.add_argument("--enable-javascript")
+options.add_argument("--dns-prefetch-disable")
+options.add_argument("--disable-gpu")
+options.add_argument("--disable-blink-features=AutomationControlled")
+options.add_argument("--start-fullscreen")
 
-## Scraper
+
+# Scraper
 class WebPage:
     """Creates a WebDriver instance that can be used across functions. """
     Instance = None
+    
     def __init__(self):
         self.driver = webdriver.Chrome(options=options)
 
@@ -28,7 +29,7 @@ class WebPage:
         """ Opens the URL passed to the function, and returns parsed html"""
         self.driver.get(url)
         time.sleep(2)
-        #Agrees with the cookies if it is present
+        # Agrees with the cookies if it is present
         try:
             self.driver.find_element_by_id(
                 "_hj-wTnOw__SurveyInvitation__noThanksButton _hj-3OscV__styles__clearButton").click()
@@ -36,15 +37,18 @@ class WebPage:
             pass
         soup = BeautifulSoup(self.driver.page_source, 'html.parser')
         return soup
+
     def quit(self):
         self.driver.quit()
+
 
 def get_pages(url):
     """Checks how many pages are for a given search"""
     soup = browser.parser(url)
-    count = int(soup.find_all("a",{"class":"page__number"})[-1].get_text())
+    count = int(soup.find_all("a", {"class": "page__number"})[-1].get_text())
     print(f"There are {count} pages for your search!")
     return count
+
 
 def get_properties(url, count):
     """Loops through all pages of listings, and saves data of properties into list."""
@@ -54,7 +58,7 @@ def get_properties(url, count):
         soup = browser.parser(page_url)
         listings = soup.find_all("article", {"class": "object-wrapper"})
         for property in listings:
-            d={}
+            d = {}
             rooms = ""
             floors = ""
             area_outside = ""
@@ -65,63 +69,66 @@ def get_properties(url, count):
                 link = "https://city24.ee" + attributes['href']
                 address = attributes['title']
                 for item in attributes.find_all('li'):
-                    if item.find("span",{"class":"icon-door"}) is not None:
+                    if item.find("span", {"class": "icon-door"}) is not None:
                         rooms = item.get_text().strip()
-                    elif item.find("span",{"class":"icon-stairs"}) is not None:
+                    elif item.find("span", {"class": "icon-stairs"}) is not None:
                         floors = item.get_text().strip()
-                    elif item.find("span",{"class":"icon-land"}) is not None:
+                    elif item.find("span", {"class": "icon-land"}) is not None:
                         area_outside = item.get_text().strip()
                     else:
                         area = item.get_text().strip()
-            d['rooms']=rooms
-            d['floors']=floors
-            d['area_outside']=area_outside
-            d['area']=area
-            d['link']=link
-            d['address']=address
+            d['rooms'] = rooms
+            d['floors'] = floors
+            d['area_outside'] = area_outside
+            d['area'] = area
+            d['link'] = link
+            d['address'] = address
             dataset.append(d)
-    return(dataset)
+    return dataset
+
 
 def user_inputs():
     """Get the inputs from the user for search"""
-    SUPPORTED_BUILDINGS = ['houses','apartments']
-    SUPPORTED_TYPES = ['sale', 'rent']
-    SUPPORTED_COUNTIES = ['voru', 'harju', 'valga', 'tartu', 'polva', 'viljandi', 'parnu', 'saare', 'hiiu', 'rapla',
+    supported_buildings = ['houses', 'apartments']
+    supported_types = ['sale', 'rent']
+    supported_counties = ['voru', 'harju', 'valga', 'tartu', 'polva', 'viljandi', 'parnu', 'saare', 'hiiu', 'rapla',
                           'jarva', 'jogeva', 'rapla', 'ida-viru', 'laane-viru', 'laane']
 
-    COUNTY_DICT = {'voru': 20271, 'harju': 1, 'valga': 14, 'tartu': 20269,
+    county_dict = {'voru': 20271, 'harju': 1, 'valga': 14, 'tartu': 20269,
                    'polva': 20266, 'viljandi': 20267, 'parnu': 20267,
-                   'saare': 11, 'hiiu': 2, 'rapla': 20268, 'jarva': 20263, 'jogeva': 20262,
+                   'saare': 11, 'hiiu': 2, 'jarva': 20263, 'jogeva': 20262,
                    'rapla': 20268, 'ida-viru': 20261, 'laane-viru': 20265, 'laane': 20264}
 
-    LISTING_TYPE = ""
-    COUNTY = ""
-    BUILDING_TYPE = ""
-    while BUILDING_TYPE not in SUPPORTED_BUILDINGS:
-        print(f"Available building types are: {SUPPORTED_BUILDINGS}. Default is 'apartments'.")
-        BUILDING_TYPE = (input("Enter the building type: ") or 'apartments')
-    while LISTING_TYPE not in SUPPORTED_TYPES:
-        print(f"Available listing types are: {SUPPORTED_TYPES}. Default is 'sale'.")
-        LISTING_TYPE = (input("Enter the listing type: ") or 'sale')
-    while COUNTY not in SUPPORTED_COUNTIES:
-        print(f"Available counties are: {SUPPORTED_COUNTIES}. Default is 'harju.")
-        COUNTY = (input("Enter the listing type: ") or 'harju')
-    county_code = COUNTY_DICT.get(COUNTY)
-    url = f"https://www.city24.ee/real-estate-search/{BUILDING_TYPE}-for-{LISTING_TYPE}/{COUNTY}-maakond/id={county_code}-county/pg="
-    return url, BUILDING_TYPE, LISTING_TYPE, COUNTY
+    listing_type = ""
+    county = ""
+    building_type = ""
+    while building_type not in supported_buildings:
+        print(f"Available building types are: {supported_buildings}. Default is 'apartments'.")
+        building_type = (input("Enter the building type: ") or 'apartments')
+    while listing_type not in supported_types:
+        print(f"Available listing types are: {supported_types}. Default is 'sale'.")
+        listing_type = (input("Enter the listing type: ") or 'sale')
+    while county not in supported_counties:
+        print(f"Available counties are: {supported_counties}. Default is 'harju.")
+        county = (input("Enter the listing type: ") or 'harju')
+    county_code = county_dict.get(county)
+    url = f"https://www.city24.ee/real-estate-search/{building_type}-for-{listing_type}/{county}-maakond/id={county_code}-county/pg="
+    return url, building_type, listing_type, county
+
 
 def main():
     """Main function that runs everything"""
-    url, BUILDING_TYPE, LISTING_TYPE, COUNTY = user_inputs()
+    url, building_type, listing_type, county = user_inputs()
     count = get_pages(url)
-    savedir = f"./data/MinimalVersion/{today}/{BUILDING_TYPE}/{LISTING_TYPE}/{COUNTY}"
+    savedir = f"./data/MinimalVersion/{today}/{building_type}/{listing_type}/{county}"
     os.makedirs(savedir, exist_ok=True)
     print(f"Started scraping data at {datetime.now().time()}")
     dataset = get_properties(url, count)
     df = pd.DataFrame(dataset)
-    df['maakond'] = COUNTY
+    df['maakond'] = county
     df.to_csv(f"{savedir}/properties.csv")
     browser.quit()
+
 
 if __name__ == "__main__":
     browser = WebPage()
