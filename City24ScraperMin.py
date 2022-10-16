@@ -21,7 +21,7 @@ options.add_argument("--start-fullscreen")
 class WebPage:
     """Creates a WebDriver instance that can be used across functions. """
     Instance = None
-    
+
     def __init__(self):
         self.driver = webdriver.Chrome(options=options)
 
