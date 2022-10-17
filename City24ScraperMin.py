@@ -65,6 +65,7 @@ def get_properties(url, count):
             area = ""
             link = ""
             address = ""
+            hind = ""
             for attributes in property.find_all("a", class_="object__attributes"):
                 link = "https://city24.ee" + attributes['href']
                 address = attributes['title']
@@ -79,10 +80,11 @@ def get_properties(url, count):
                         area = item.get_text().strip()
             d['rooms'] = rooms
             d['floors'] = floors
-            d['area_outside'] = area_outside
-            d['area'] = area
+            d['area_outside'] = area_outside.split(" ")[0]
+            d['area'] = area.split(" ")[0]
             d['link'] = link
             d['address'] = address
+            d['hind'] = int("".join(property.find("div",{"class":"object-price__main-price"}).get_text().split('\xa0')[0:2]))
             dataset.append(d)
     return dataset
 
