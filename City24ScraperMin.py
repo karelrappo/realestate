@@ -16,6 +16,24 @@ options.add_argument("--disable-gpu")
 options.add_argument("--disable-blink-features=AutomationControlled")
 options.add_argument("--start-fullscreen")
 
+class SearchArguments:
+    def __init__(self, listing_type=None, county=None, building_type=None):
+        self.listing_type = listing_type
+        self.county = county
+        self.building_type = building_type
+
+    def county_mapper(self):
+        county_dict = {'voru': 20271, 'harju': 1, 'valga': 14, 'tartu': 20269,
+                       'polva': 20266, 'viljandi': 20267, 'parnu': 20267,
+                       'saare': 11, 'hiiu': 2, 'jarva': 20263, 'jogeva': 20262,
+                       'rapla': 20268, 'ida-viru': 20261, 'laane-viru': 20265, 'laane': 20264}
+        return(county_dict.get(self.county))
+
+    def url_generator(self):
+        base_url = "https://www.city24.ee/real-estate-search"
+        county_code = self.county_mapper()
+        return (f"{base_url}/{self.building_type}-for-{self.listing_type}/{self.county}-maakond/id={county_code}-county/pg=")
+
 
 # Scraper
 class WebPage:
@@ -84,7 +102,11 @@ def get_properties(url, count):
             d['area'] = area.split(" ")[0]
             d['link'] = link
             d['address'] = address
-            d['hind'] = int("".join(property.find("div",{"class":"object-price__main-price"}).get_text().split('\xa0')[0:2]))
+            try:
+                d['hind'] = int("".join(property.find("div", {"class": "object-price__main-price"})
+                                    .get_text().split('\xa0')[0:2]))
+            except:
+                d['hind'] = 0
             dataset.append(d)
     return dataset
 
@@ -96,33 +118,23 @@ def user_inputs():
     supported_counties = ['voru', 'harju', 'valga', 'tartu', 'polva', 'viljandi', 'parnu', 'saare', 'hiiu', 'rapla',
                           'jarva', 'jogeva', 'rapla', 'ida-viru', 'laane-viru', 'laane']
 
-    county_dict = {'voru': 20271, 'harju': 1, 'valga': 14, 'tartu': 20269,
-                   'polva': 20266, 'viljandi': 20267, 'parnu': 20267,
-                   'saare': 11, 'hiiu': 2, 'jarva': 20263, 'jogeva': 20262,
-                   'rapla': 20268, 'ida-viru': 20261, 'laane-viru': 20265, 'laane': 20264}
-
-    listing_type = ""
-    county = ""
-    building_type = ""
-    while building_type not in supported_buildings:
+    while Search.building_type not in supported_buildings:
         print(f"Available building types are: {supported_buildings}. Default is 'apartments'.")
-        building_type = (input("Enter the building type: ") or 'apartments')
-    while listing_type not in supported_types:
+        Search.building_type = (input("Enter the building type: ") or 'apartments')
+    while Search.listing_type not in supported_types:
         print(f"Available listing types are: {supported_types}. Default is 'sale'.")
-        listing_type = (input("Enter the listing type: ") or 'sale')
-    while county not in supported_counties:
+        Search.listing_type = (input("Enter the listing type: ") or 'sale')
+    while Search.county not in supported_counties:
         print(f"Available counties are: {supported_counties}. Default is 'harju.")
-        county = (input("Enter the listing type: ") or 'harju')
-    county_code = county_dict.get(county)
-    url = f"https://www.city24.ee/real-estate-search/{building_type}-for-{listing_type}/{county}-maakond/id={county_code}-county/pg="
-    return url, building_type, listing_type, county
+        Search.county = (input("Enter the listing type: ") or 'harju')
 
 
 def main():
     """Main function that runs everything"""
-    url, building_type, listing_type, county = user_inputs()
+    user_inputs()
+    url = Search.url_generator()
     count = get_pages(url)
-    savedir = f"./data/MinimalVersion/{today}/{building_type}/{listing_type}/{county}"
+    savedir = f"./data/MinimalVersion/{today}/{Search.building_type}/{Search.listing_type}/{Search.county}"
     os.makedirs(savedir, exist_ok=True)
     print(f"Started scraping data at {datetime.now().time()}")
     dataset = get_properties(url, count)
@@ -134,6 +146,7 @@ def main():
 
 if __name__ == "__main__":
     browser = WebPage()
+    Search = SearchArguments()
     today = datetime.today().strftime('%Y-%m-%d')
     main()
     print("Scraping finished successfully!")
