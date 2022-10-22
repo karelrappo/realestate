@@ -88,7 +88,10 @@ def get_info(url):
         for items in table_content[0].find_all("tr"):
             # Create a cleaned list with items and values
             data = [item.get_text(separator=',') for item in items.find_all(['th', 'td'])]
-            d[data[0]] = data[-1]
+            if data[0] == "Hind":
+                d['Hind'] = int(''.join(data[1].split("€")[0].split('\xa0')[0:2]))
+            else:
+                d[data[0].replace('\n', '')] = data[-1].replace('\n', '')
             d['Aadress'] = address + ',' + linnaosa
             d['Kuupaev'] = today
     return d
@@ -141,6 +144,7 @@ def user_inputs():
 def main():
     """Main function that runs everything"""
     dataset = []
+    user_inputs()
     url = Search.url_generator()
     count = get_pages(url)
     print(f"Started scraping links at {datetime.now().time()}")
