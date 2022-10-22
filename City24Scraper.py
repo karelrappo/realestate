@@ -6,7 +6,9 @@ from tqdm.auto import tqdm
 import pandas as pd
 from datetime import datetime
 import os
+
 warnings.filterwarnings("ignore", category=DeprecationWarning)
+from webdriver_manager.chrome import ChromeDriverManager
 
 # Create the options - i.e. enable javascript and disable automation flag
 options = webdriver.ChromeOptions()
@@ -17,13 +19,33 @@ options.add_argument("--disable-blink-features=AutomationControlled")
 options.add_argument("--start-fullscreen")
 
 
+class SearchArguments:
+    def __init__(self, listing_type=None, county=None, building_type=None):
+        self.listing_type = listing_type
+        self.county = county
+        self.building_type = building_type
+
+    def county_mapper(self):
+        county_dict = {'voru': 20271, 'harju': 1, 'valga': 14, 'tartu': 20269,
+                       'polva': 20266, 'viljandi': 20267, 'parnu': 20267,
+                       'saare': 11, 'hiiu': 2, 'jarva': 20263, 'jogeva': 20262,
+                       'rapla': 20268, 'ida-viru': 20261, 'laane-viru': 20265, 'laane': 20264}
+        return (county_dict.get(self.county))
+
+    def url_generator(self):
+        base_url = "https://www.city24.ee/real-estate-search"
+        county_code = self.county_mapper()
+        return (
+            f"{base_url}/{self.building_type}-for-{self.listing_type}/{self.county}-maakond/id={county_code}-county/pg=")
+
+
 # Scraper
 class WebPage:
     """Creates a WebDriver instance that can be used across functions. """
     Instance = None
 
     def __init__(self):
-        self.driver = webdriver.Chrome(options=options)
+        self.driver = webdriver.Chrome(ChromeDriverManager().install(), options=options)
 
     def parser(self, url):
         """ Opens the URL passed to the function, and returns parsed html"""
@@ -83,8 +105,8 @@ def get_pages(url):
 def get_properties(url, count):
     """Loops through all pages of listings, and saves their urls into list."""
     all_links = []
-    for i in tqdm(range(1, count+1)):
-        page_url = url+str(i)
+    for i in tqdm(range(1, count + 1)):
+        page_url = url + str(i)
         soup = browser.parser(page_url)
         results = soup.find_all("article", {"class": "object-wrapper"})
         for property in results:
@@ -105,33 +127,27 @@ def user_inputs():
                    'saare': 11, 'hiiu': 2, 'jarva': 20263, 'jogeva': 20262,
                    'rapla': 20268, 'ida-viru': 20261, 'laane-viru': 20265, 'laane': 20264}
 
-    listing_type = ""
-    county = ""
-    building_type = ""
-    while building_type not in supported_buildings:
+    while Search.building_type not in supported_buildings:
         print(f"Available building types are: {supported_buildings}. Default is 'apartments'.")
-        building_type = (input("Enter the building type: ") or 'apartments')
-    while listing_type not in supported_types:
+        Search.building_type = (input("Enter the building type: ") or 'apartments')
+    while Search.listing_type not in supported_types:
         print(f"Available listing types are: {supported_types}. Default is 'sale'.")
-        listing_type = (input("Enter the listing type: ") or 'sale')
-    while county not in supported_counties:
+        Search.listing_type = (input("Enter the listing type: ") or 'sale')
+    while Search.county not in supported_counties:
         print(f"Available counties are: {supported_counties}. Default is 'harju.")
-        county = (input("Enter the listing type: ") or 'harju')
-    county_code = county_dict.get(county)
-    url = f"https://www.city24.ee/real-estate-search/{building_type}-for-{listing_type}/{county}-maakond/id={county_code}-county/pg="
-    return url, building_type, listing_type, county
+        Search.county = (input("Enter the listing type: ") or 'harju')
 
 
 def main():
     """Main function that runs everything"""
     dataset = []
-    url, building_type, listing_type, county = user_inputs()
+    url = Search.url_generator()
     count = get_pages(url)
     print(f"Started scraping links at {datetime.now().time()}")
     links = get_properties(url, count)
     print(f"Stopped scraping links at {datetime.now().time()}")
 
-    savedir = f"./data/{today}/{building_type}/{listing_type}/{county}"
+    savedir = f"./data/{today}/{Search.building_type}/{Search.listing_type}/{Search.county}"
     os.makedirs(savedir, exist_ok=True)
     pd.DataFrame(links).to_csv(f"{savedir}/links.csv")
 
@@ -139,7 +155,7 @@ def main():
     for i in tqdm(range(0, len(links))):
         dataset.append(get_info(links[i]))
     df = pd.DataFrame(dataset)
-    df['maakond'] = county
+    df['maakond'] = Search.county
 
     df.to_csv(f"{savedir}/properties.csv")
     browser.quit()
@@ -147,6 +163,7 @@ def main():
 
 if __name__ == "__main__":
     browser = WebPage()
+    Search = SearchArguments()
     today = datetime.today().strftime('%Y-%m-%d')
     main()
     print("Scraping finished successfully!")

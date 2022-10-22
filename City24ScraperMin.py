@@ -6,6 +6,7 @@ from tqdm.auto import tqdm
 import pandas as pd
 from datetime import datetime
 import os
+from webdriver_manager.chrome import ChromeDriverManager
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 # Create the options - i.e. enable javascript and disable automation flag
@@ -41,7 +42,7 @@ class WebPage:
     Instance = None
 
     def __init__(self):
-        self.driver = webdriver.Chrome(options=options)
+        self.driver = webdriver.Chrome(ChromeDriverManager().install(), options=options)
 
     def parser(self, url):
         """ Opens the URL passed to the function, and returns parsed html"""
@@ -139,7 +140,7 @@ def main():
     print(f"Started scraping data at {datetime.now().time()}")
     dataset = get_properties(url, count)
     df = pd.DataFrame(dataset)
-    df['maakond'] = county
+    df['maakond'] = Search.county
     df.to_csv(f"{savedir}/properties.csv")
     browser.quit()
 
