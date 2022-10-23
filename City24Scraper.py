@@ -89,7 +89,7 @@ def get_info(url):
             # Create a cleaned list with items and values
             data = [item.get_text(separator=',') for item in items.find_all(['th', 'td'])]
             if data[0] == "Hind":
-                d['Hind'] = int(''.join(data[1].split("€")[0].split('\xa0')[0:2]))
+                d['Hind'] = float(''.join(data[1].split("€")[0].split('\xa0')[0:2]))
             else:
                 d[data[0].replace('\n', '')] = data[-1].replace('\n', '')
             d['Aadress'] = address + ',' + linnaosa

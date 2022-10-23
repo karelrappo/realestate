@@ -104,7 +104,7 @@ def get_properties(url, count):
             d['link'] = link
             d['address'] = address
             try:
-                d['hind'] = int("".join(property.find("div", {"class": "object-price__main-price"})
+                d['hind'] = float("".join(property.find("div", {"class": "object-price__main-price"})
                                     .get_text().split('\xa0')[0:2]))
             except:
                 d['hind'] = 0
