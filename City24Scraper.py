@@ -18,6 +18,12 @@ options.add_argument("--disable-gpu")
 options.add_argument("--disable-blink-features=AutomationControlled")
 options.add_argument("--start-fullscreen")
 
+# Most columns 90% null-values but let's still extract them - can drop later in EDA.
+DATA_COLS = ['Seisukord','Tube','Magamistube','Üldpind','Korrus','Korruseid kokku','Omandiõigus','Turvasüsteem','Hind','Energiamärgis','Materjal'
+    ,'Ehitusaasta','Küte','Sanitaar','Vannitube','Lisaväärtused','Lisaruumid','Pliit','Side','Rõdu pind','Tagatisraha','Suve kommunaalid','Talve kommunaalid','Kinnistu number'
+    ,'Lift','Rõdu','Parkimine','Katus','Krunt'
+    ,'Lisanduvad kommunaalkulud','Lisainfo','tasuta parkimine','Ventilatsioon','Parkimiskohti','tasuline parkimine','Lisanduvad kommunaalid','Maakleritasu','Piirangud']
+
 
 class SearchArguments:
     def __init__(self, listing_type=None, county=None, building_type=None):
@@ -88,9 +94,11 @@ def get_info(url):
         for items in table_content[0].find_all("tr"):
             # Create a cleaned list with items and values
             data = [item.get_text(separator=',') for item in items.find_all(['th', 'td'])]
-            if data[0] == "Hind":
+            if (data[0] == "Hind"):
                 d['Hind'] = float(''.join(data[1].split("€")[0].split('\xa0')[0:2]))
-            else:
+            elif (data[0] == "Üldpind"):
+                d['Üldpind'] = float(data[1].split(" ")[0])
+            elif (data[0].replace('\n', '') in DATA_COLS):
                 d[data[0].replace('\n', '')] = data[-1].replace('\n', '')
             d['Aadress'] = address + ',' + linnaosa
             d['Kuupaev'] = today
@@ -146,6 +154,7 @@ def main():
     dataset = []
     user_inputs()
     url = Search.url_generator()
+    print(f"Constructed url is {url}")
     count = get_pages(url)
     print(f"Started scraping links at {datetime.now().time()}")
     links = get_properties(url, count)
