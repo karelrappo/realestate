@@ -22,7 +22,7 @@ options.add_argument("--start-fullscreen")
 DATA_COLS = ['Seisukord','Tube','Magamistube','Üldpind','Korrus','Korruseid kokku','Omandiõigus','Turvasüsteem','Hind','Energiamärgis','Materjal'
     ,'Ehitusaasta','Küte','Sanitaar','Vannitube','Lisaväärtused','Lisaruumid','Pliit','Side','Rõdu pind','Tagatisraha','Suve kommunaalid','Talve kommunaalid','Kinnistu number'
     ,'Lift','Rõdu','Parkimine','Katus','Krunt'
-    ,'Lisanduvad kommunaalkulud','Lisainfo','tasuta parkimine','Ventilatsioon','Parkimiskohti','tasuline parkimine','Lisanduvad kommunaalid','Maakleritasu','Piirangud']
+    ,'Lisanduvad kommunaalkulud','Lisainfo','tasuta parkimine','Ventilatsioon','Parkimiskohti','tasuline parkimine','Lisanduvad kommunaalid','Maakleritasu','Piirangud','Aadress','Date']
 
 
 class SearchArguments:
@@ -83,6 +83,9 @@ def get_info(url):
         linnaosa = soup.find("div", {"class": "obj-detail__area"}).get_text()
     except Exception:
         linnaosa = "N/A"
+    d['Address'] = ", ".join([address, linnaosa])
+    d['District'] = linnaosa
+    d['Date'] = today
     # Find all tables on the pages
     tables = soup.find_all("table", {"class": "full-specs"})
     # Extract the body of the tables and append to the list
@@ -100,8 +103,6 @@ def get_info(url):
                 d['Üldpind'] = float(data[1].split(" ")[0])
             elif (data[0].replace('\n', '') in DATA_COLS):
                 d[data[0].replace('\n', '')] = data[-1].replace('\n', '')
-            d['Aadress'] = address + ',' + linnaosa
-            d['Kuupaev'] = today
     return d
 
 

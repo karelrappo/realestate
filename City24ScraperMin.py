@@ -103,6 +103,7 @@ def get_properties(url, count):
             d['area'] = area.split(" ")[0]
             d['link'] = link
             d['address'] = address
+            d['date'] = today
             try:
                 d['hind'] = float("".join(property.find("div", {"class": "object-price__main-price"})
                                     .get_text().split('\xa0')[0:2]))
