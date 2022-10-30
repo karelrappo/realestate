@@ -13,6 +13,7 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 options = webdriver.ChromeOptions()
 options.add_argument("--enable-javascript")
 options.add_argument("--dns-prefetch-disable")
+options.add_argument("--disable-extensions")
 options.add_argument("--disable-gpu")
 options.add_argument("--disable-blink-features=AutomationControlled")
 options.add_argument("--start-fullscreen")
@@ -105,8 +106,8 @@ def get_properties(url, count):
             d['address'] = address
             d['date'] = today
             try:
-                d['hind'] = float("".join(property.find("div", {"class": "object-price__main-price"})
-                                    .get_text().split('\xa0')[0:2]))
+                d['hind'] = float(property.find("div", {"class": "object-price__main-price"})
+                                    .get_text().replace(u'\xa0', u''))
             except:
                 d['hind'] = 0
             dataset.append(d)

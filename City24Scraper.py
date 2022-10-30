@@ -13,10 +13,12 @@ from webdriver_manager.chrome import ChromeDriverManager
 # Create the options - i.e. enable javascript and disable automation flag
 options = webdriver.ChromeOptions()
 options.add_argument("--enable-javascript")
+options.add_argument("--disable-extensions")
 options.add_argument("--dns-prefetch-disable")
 options.add_argument("--disable-gpu")
 options.add_argument("--disable-blink-features=AutomationControlled")
-options.add_argument("--start-fullscreen")
+#options.add_argument("--headless")
+
 
 # Most columns 90% null-values but let's still extract them - can drop later in EDA.
 DATA_COLS = ['Seisukord','Tube','Magamistube','Üldpind','Korrus','Korruseid kokku','Omandiõigus','Turvasüsteem','Hind','Energiamärgis','Materjal'
@@ -98,7 +100,7 @@ def get_info(url):
             # Create a cleaned list with items and values
             data = [item.get_text(separator=',') for item in items.find_all(['th', 'td'])]
             if (data[0] == "Hind"):
-                d['Hind'] = float(''.join(data[1].split("€")[0].split('\xa0')[0:2]))
+                d['Hind'] = float(data[1].split("€")[0].replace(u'\xa0', u''))
             elif (data[0] == "Üldpind"):
                 d['Üldpind'] = float(data[1].split(" ")[0])
             elif (data[0].replace('\n', '') in DATA_COLS):
